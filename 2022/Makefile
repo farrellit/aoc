@@ -1,7 +1,7 @@
 run: build
 	./2022
 
-build: cover
+build: test
 	go build
 
 test:
