@@ -1,6 +1,7 @@
 package rucksack
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"testing"
@@ -35,7 +36,7 @@ func TestPriority(t *testing.T) {
 			}
 		})
 	}
-	t.Run("Sum==157", func(t *testing.T){ 
+	t.Run("Sum==157", func(t *testing.T) {
 		if res, exp := Priorities(priorities).Sum(), 157; res != exp {
 			t.Errorf("Expected %d got %d", exp, res)
 		}
@@ -89,4 +90,17 @@ func TestRucksack(t *testing.T) {
 			})
 		}
 	})
+}
+func TestRucksackList(t *testing.T) {
+	input := `vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw`
+	var rl RucksackList
+	rl.Read(bytes.NewBufferString(input))
+	if s, exp := rl.Priorities().Sum(), 157; s != exp {
+		t.Errorf("Expected sum %d got %d", exp, s)
+	}
 }
