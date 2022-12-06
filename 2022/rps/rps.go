@@ -10,9 +10,10 @@ import (
 type ResultScore int
 
 const (
-	WinScore  ResultScore = 6
-	DrawScore             = 3
-	LoseScore             = 0
+	WinScore     ResultScore = 6
+	DrawScore                = 3
+	LoseScore                = 0
+	InvalidScore             = 0
 )
 
 type Choice uint8
@@ -27,6 +28,37 @@ func (c Choice) String() string {
 		return "Scissors"
 	}
 	return "Invalid"
+}
+
+// The outcome for c, not o!
+func (c Choice) Outcome(o Choice) ResultScore {
+	if c == o {
+		return DrawScore
+	}
+	switch c {
+	case Rock:
+		switch o {
+		case Paper:
+			return LoseScore
+		case Scissors:
+			return WinScore
+		}
+	case Paper:
+		switch o {
+		case Rock:
+			return WinScore
+		case Scissors:
+			return LoseScore
+		}
+	case Scissors:
+		switch o {
+		case Rock:
+			return LoseScore
+		case Paper:
+			return WinScore
+		}
+	}
+	return InvalidScore
 }
 
 const (
@@ -47,41 +79,8 @@ func (r Round) Scores() (scores [2]int) {
 
 func (r Round) Score() (score0, score1 int) {
 	score0, score1 = int(r.choices[0]), int(r.choices[1])
-	// draw
-	if r.choices[0] == r.choices[1] {
-		score0 += int(DrawScore)
-		score1 += int(DrawScore)
-	} else {
-		switch r.choices[0] {
-		case Rock:
-			switch r.choices[1] {
-			case Paper:
-				score1 += int(WinScore)
-				score0 += int(LoseScore)
-			case Scissors:
-				score0 += int(WinScore)
-				score1 += int(LoseScore)
-			}
-		case Paper:
-			switch r.choices[1] {
-			case Rock:
-				score0 += int(WinScore)
-				score1 += int(LoseScore)
-			case Scissors:
-				score1 += int(WinScore)
-				score0 += int(LoseScore)
-			}
-		case Scissors:
-			switch r.choices[1] {
-			case Rock:
-				score1 += int(WinScore)
-				score0 += int(LoseScore)
-			case Paper:
-				score0 += int(WinScore)
-				score1 += int(LoseScore)
-			}
-		}
-	}
+	score0 += int(r.choices[0].Outcome(r.choices[1]))
+	score1 += int(r.choices[1].Outcome(r.choices[0]))
 	return
 }
 
