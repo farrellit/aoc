@@ -12,6 +12,36 @@ type SetContentsTest struct {
 	expected_duplicate rune
 }
 
+type PriorityTest struct {
+	r rune
+	e int
+}
+
+func TestPriority(t *testing.T) {
+	tests := []PriorityTest{
+		PriorityTest{'p', 16},
+		PriorityTest{'L', 38},
+		PriorityTest{'P', 42},
+		PriorityTest{'v', 22},
+		PriorityTest{'t', 20},
+		PriorityTest{'s', 19},
+	}
+	var priorities []int
+	for _, test := range tests {
+		priorities = append(priorities, Priority(test.r))
+		t.Run(fmt.Sprintf("%c_%d", test.r, test.e), func(t *testing.T) {
+			if res, exp := Priority(test.r), test.e; res != exp {
+				t.Errorf("Wanted %c got %c ", exp, res)
+			}
+		})
+	}
+	t.Run("Sum==157", func(t *testing.T){ 
+		if res, exp := Priorities(priorities).Sum(), 157; res != exp {
+			t.Errorf("Expected %d got %d", exp, res)
+		}
+	})
+}
+
 func TestRucksack(t *testing.T) {
 	tests := []SetContentsTest{
 		SetContentsTest{

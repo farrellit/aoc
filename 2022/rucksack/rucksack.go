@@ -21,3 +21,24 @@ func (r *Rucksack) Duplicate() rune {
 	}
 	return 0
 }
+
+func Priority(r rune) int {
+	if r >= 'a' && r <= 'z' {
+		return 1 + int(r - 'a')
+	}
+	if r >= 'A' && r <= 'Z' {
+		return 27 + int(r - 'A')
+	}
+	return 0
+}
+
+type Priorities []int
+
+func (p Priorities)Sum() (s int) {
+	if p != nil {
+	for _, p := range p {
+		s += p
+	}
+	}
+	return
+}
