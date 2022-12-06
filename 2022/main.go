@@ -8,7 +8,7 @@ import (
 
 // The contract with the daily runnable
 type AOCRunnable interface {
-	Run(io.Reader) []interface{}
+	Run(io.ReadSeeker) []interface{}
 }
 
 /* represents a day to be run */

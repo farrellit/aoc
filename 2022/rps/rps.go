@@ -9,11 +9,23 @@ import (
 
 type ResultScore int
 
+func (r ResultScore) String() string {
+	switch r {
+	case WinScore:
+		return "Win"
+	case LoseScore:
+		return "Lose"
+	case DrawScore:
+		return "Draw"
+	}
+	return "Invalid"
+}
+
 const (
 	WinScore     ResultScore = 6
 	DrawScore                = 3
 	LoseScore                = 0
-	InvalidScore             = 0
+	InvalidScore             = -1
 )
 
 type Choice uint8
@@ -62,10 +74,10 @@ func (c Choice) Outcome(o Choice) ResultScore {
 }
 
 const (
-	Invalid  Choice = 0
-	Rock            = 1
-	Paper           = 2
-	Scissors        = 3
+	InvalidChoice Choice = 0
+	Rock                 = 1
+	Paper                = 2
+	Scissors             = 3
 )
 
 type Round struct {
@@ -88,7 +100,8 @@ type Game struct {
 	rounds []Round
 }
 
-func ParseChoice(s string) (Choice, error) {
+func ParseChoice(idx int, fields []string) (Choice, error) {
+	s := fields[idx]
 	switch strings.ToUpper(s) {
 	case "A":
 		fallthrough
@@ -103,10 +116,49 @@ func ParseChoice(s string) (Choice, error) {
 	case "Z":
 		return Scissors, nil
 	}
-	return Invalid, fmt.Errorf("'%s' is not a valid choice", s)
+	return InvalidChoice, fmt.Errorf("'%s' is not a valid choice", s)
 }
 
-func (g *Game) ReadRounds(input io.Reader) error {
+func ParseOutcome(idx int, fields []string) (Choice, error) {
+	if idx != 1 {
+		return InvalidChoice, fmt.Errorf("ParseOutcome only works for field index 1 (second field)")
+	}
+	// determine desrired outcome
+	var desired ResultScore
+	switch s := strings.ToUpper(fields[idx]); s {
+	case "X":
+		desired = LoseScore
+	case "Y":
+		desired = DrawScore
+	case "Z":
+		desired = WinScore
+	default:
+		return InvalidChoice, fmt.Errorf("%s is not a valid desired outcome", s)
+	}
+	// parse other player's choice
+	var other Choice
+	if o, err := ParseChoice(0, fields); err != nil {
+		return InvalidChoice, fmt.Errorf("ParseOutcome could not parse choice in field 0 '%s': %w", fields[0], err)
+	} else {
+		other = o
+	}
+	// now figure out which answer would be appropraite
+	for _, option := range []Choice{Rock, Paper, Scissors} {
+		if option.Outcome(other) == desired {
+			return option, nil
+		}
+	}
+	return InvalidChoice, fmt.Errorf("Could not reach desired outcome %s with opponent's choice %s", desired, fields[0])
+}
+
+func (g *Game) ReadRoundsChoices(input io.Reader) error {
+	return g.ReadRounds(input, ParseChoice, ParseChoice)
+}
+
+type Parser func(int, []string) (Choice, error)
+
+func (g *Game) ReadRounds(input io.Reader, parser0, parser1 Parser) error {
+	parsers := [2]Parser{parser0, parser1}
 	scan := bufio.NewScanner(input)
 	var lineno = 0
 	for scan.Scan() {
@@ -118,7 +170,7 @@ func (g *Game) ReadRounds(input io.Reader) error {
 		}
 		var round Round
 		for i := 0; i < 2; i++ {
-			if c, err := ParseChoice(fields[i]); err != nil {
+			if c, err := parsers[i](i, fields); err != nil {
 				return fmt.Errorf("Error parsing line #%d '%s' field #%d '%s': %w",
 					lineno, line, i+1, fields[i], err)
 			} else {

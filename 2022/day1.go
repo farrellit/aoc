@@ -7,7 +7,7 @@ import (
 
 type Day1 struct{}
 
-func (_ Day1) Run(input io.Reader) []interface{} {
+func (_ Day1) Run(input io.ReadSeeker) []interface{} {
 	elves := ReadCalorieList(input)
 	sort.Sort(ElvesByCalories(elves))
 	return []interface{}{

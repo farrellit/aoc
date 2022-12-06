@@ -62,6 +62,38 @@ func TestRound(t *testing.T) {
 	}
 }
 
+type ParseOutcomeTest struct {
+	opponent, desired string
+	expected          Choice
+}
+
+func TestParseOutcome(t *testing.T) {
+	for _, test := range []ParseOutcomeTest{
+		ParseOutcomeTest{"A", "X", Scissors},
+		ParseOutcomeTest{"A", "Y", Rock},
+		ParseOutcomeTest{"A", "Z", Paper},
+		ParseOutcomeTest{"B", "Z", Scissors},
+		ParseOutcomeTest{"B", "X", Rock},
+		ParseOutcomeTest{"B", "Y", Paper},
+		ParseOutcomeTest{"C", "Y", Scissors},
+		ParseOutcomeTest{"C", "Z", Rock},
+		ParseOutcomeTest{"C", "X", Paper},
+	} {
+		t.Run(
+			fmt.Sprint(test.opponent, test.desired, test.expected.String()),
+			func(t *testing.T) {
+				res, err := ParseOutcome(1, []string{test.opponent, test.desired})
+				if res != test.expected {
+					t.Errorf("Expected %s got %s", test.expected, res)
+				}
+				if err != nil {
+					t.Errorf("Expected no error, got %s", err.Error())
+				}
+			},
+		)
+	}
+}
+
 type ParseChoiceTest struct {
 	s string
 	c Choice
@@ -83,7 +115,7 @@ func TestParseChoice(t *testing.T) {
 		ParseChoiceTest{"Z", Scissors},
 	} {
 		t.Run(fmt.Sprintf("%s %d", test.s, test.c), func(t *testing.T) {
-			if c, err := ParseChoice(test.s); err != nil {
+			if c, err := ParseChoice(0, []string{test.s}); err != nil {
 				t.Error(err.Error())
 			} else if c != test.c {
 				t.Errorf("Expected %d got %d", test.c, c)
@@ -91,31 +123,32 @@ func TestParseChoice(t *testing.T) {
 		})
 	}
 	t.Run("InvalidChoice", func(t *testing.T) {
-		r, e := ParseChoice("d")
+		r, e := ParseChoice(0, []string{"d"})
 		if e == nil {
 			t.Errorf("Expected error parsing `d`, got nil")
 		}
-		if r != Invalid {
-			t.Errorf("Expected Invalid (%d) choice parsing `d`, got %d", Invalid, r)
+		if r != InvalidChoice {
+			t.Errorf("Expected Invalid (%d) choice parsing `d`, got %d", InvalidChoice, r)
 		}
 	})
 }
+
 
 func TestGame(t *testing.T) {
 	var valid_input string = `A Y
 B X
 C Z`
-	t.Run("ReadRounds", func(t *testing.T) {
+	t.Run("ReadRoundsChoices", func(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
 			game := new(Game)
-			if err := game.ReadRounds(bytes.NewBufferString(valid_input)); err != nil {
-				t.Errorf("Failed to ReadRounds with input %s: %s", valid_input, err.Error())
+			if err := game.ReadRoundsChoices(bytes.NewBufferString(valid_input)); err != nil {
+				t.Errorf("Failed to ReadRoundsChoices with input %s: %s", valid_input, err.Error())
 			}
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			t.Run("BadField", func(t *testing.T) {
 				game := new(Game)
-				if err := game.ReadRounds(bytes.NewBufferString("A T")); err == nil {
+				if err := game.ReadRoundsChoices(bytes.NewBufferString("A T")); err == nil {
 					t.Errorf("Expected error from invalid choice field, got nil")
 				}
 			})
@@ -123,7 +156,7 @@ C Z`
 				for _, str := range []string{" ", "A", "      Z     "} {
 					t.Run(str, func(t *testing.T) {
 						game := new(Game)
-						if err := game.ReadRounds(bytes.NewBufferString(str)); err == nil {
+						if err := game.ReadRoundsChoices(bytes.NewBufferString(str)); err == nil {
 							t.Errorf("Expected error from input '%s' missing fields, got nil and game is %v", str, game)
 						} else {
 							t.Logf("Got expected error from input '%s', %s", str, err.Error())
@@ -143,14 +176,27 @@ C Z`
 		})
 		t.Run("Valid", func(t *testing.T) {
 			var game Game
-			if err := game.ReadRounds(bytes.NewBufferString(valid_input)); err != nil {
-				fmt.Errorf("Failed to read valid input")
-			} else {
+			if err := game.ReadRoundsChoices(bytes.NewBufferString(valid_input)); err != nil {
+				t.Fatalf("Failed to read valid input: %s", err.Error())
+			}
 				expected := [2]int{1 + 8 + 6, 15}
 				if scores := game.Scores(); scores != expected {
 					t.Errorf("Game.Scores: Expected %v, got %v", expected, scores)
 				}
-			}
 		})
+	})
+	t.Run("ParseOutcomes", func(t *testing.T){
+		var game Game
+		if err := game.ReadRounds(
+			bytes.NewBufferString(valid_input),
+			ParseChoice,
+			ParseOutcome,
+		); err != nil {
+			t.Fatalf("Failed to read rounds of valid input: %s", err.Error())
+		}
+		expected := [2]int{4+8+3, 12}
+		if scores := game.Scores(); scores != expected {
+			t.Errorf("Expected %v got %v", expected, scores)
+		}
 	})
 }
