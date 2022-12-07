@@ -151,6 +151,18 @@ CrZsJsPPZsGzwwsLwLmpwMDw`
 			t.Errorf("Expected %#v, got %#v", exp, res)
 		}
 	})
+	t.Run("GroupBadges", func(t *testing.T) {
+		badges := GroupBadges(GroupRucksacks(rl, 3))
+		if res, exp := string(badges), "rZ"; res != exp {
+			t.Errorf("Expected %s got %s", exp, res)
+		}
+	})
+	t.Run("Answer", func(t *testing.T) {
+		sum, exp := RuneList(GroupBadges(GroupRucksacks(rl, 3))).Priorities().Sum(), 70
+		if sum != exp {
+			t.Errorf("Wanted %d got %d", exp, sum)
+		}
+	})
 }
 
 type IntersectTest struct {

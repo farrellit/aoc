@@ -2,6 +2,7 @@ package rucksack
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -81,6 +82,21 @@ func (p Priorities) Sum() (s int) {
 	return
 }
 
+func GroupBadges(groups [][]*Rucksack) (res []rune) {
+	res = make([]rune, len(groups))
+	for grpid, rucksacks := range groups {
+		shared := RucksackIntersect(rucksacks...)
+		if len(shared) != 1 {
+			panic(fmt.Errorf(
+				"Unexpected duplicate shared runes between group of rucksacks: %s",
+				string(shared),
+			))
+		}
+		res[grpid] = shared[0]
+	}
+	return
+}
+
 func GroupRucksacks(rs []*Rucksack, size int) (res [][]*Rucksack) {
 	for i := 0; i < len(rs); i += size {
 		lim := i + 3
@@ -104,9 +120,19 @@ func (r *RucksackList) Read(input io.Reader) {
 	}
 }
 
-func (r RucksackList) Priorities() (ps Priorities) {
+type RuneList []rune
+
+func (r RuneList) Priorities() (ps Priorities) {
 	for _, r := range r {
-		ps = append(ps, Priority(r.Duplicate()))
+		ps = append(ps, Priority(r))
 	}
 	return
+}
+
+func (rlist RucksackList) Priorities() Priorities {
+	var dups RuneList
+	for _, ruck := range rlist {
+		dups = append(dups, ruck.Duplicate())
+	}
+	return dups.Priorities()
 }
