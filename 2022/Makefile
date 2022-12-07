@@ -6,8 +6,8 @@ build: test
 
 test:
 	go fmt
-	go test
+	go test ./...
 
 cover: test
-	go test -v  -coverprofile cover.out -cover
+	go test -v  -coverprofile cover.out -cover ./...
 	go tool cover -html=cover.out
