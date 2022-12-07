@@ -28,6 +28,38 @@ func (r *Rucksack) Duplicate() rune {
 	return 0
 }
 
+func Intersect(s1, s2 []rune) (result []rune) {
+	result = make([]rune, 0)
+outer:
+	for idx, i := range s1 {
+		// avoid duplicates
+		for _, isdup := range s1[0:idx] {
+			if isdup == i {
+				continue outer
+			}
+		}
+		for _, j := range s2 {
+			if i == j {
+				result = append(result, i)
+				continue outer
+			}
+		}
+	}
+	return
+}
+
+func (r *Rucksack) Contents() []rune {
+	return []rune(r.Compartments[0] + r.Compartments[1])
+}
+
+func RucksackIntersect(rucksacks ...*Rucksack) (candidates []rune) {
+	candidates = rucksacks[0].Contents()
+	for _, s := range rucksacks[1:] {
+		candidates = Intersect(candidates, s.Contents())
+	}
+	return
+}
+
 func Priority(r rune) int {
 	if r >= 'a' && r <= 'z' {
 		return 1 + int(r-'a')
@@ -45,6 +77,17 @@ func (p Priorities) Sum() (s int) {
 		for _, p := range p {
 			s += p
 		}
+	}
+	return
+}
+
+func GroupRucksacks(rs []*Rucksack, size int) (res [][]*Rucksack) {
+	for i := 0; i < len(rs); i += size {
+		lim := i + 3
+		if lim > len(rs) {
+			lim = len(rs)
+		}
+		res = append(res, rs[i:lim])
 	}
 	return
 }

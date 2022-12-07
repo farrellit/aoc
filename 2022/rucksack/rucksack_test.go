@@ -87,10 +87,19 @@ func TestRucksack(t *testing.T) {
 				if dup, exp := r.Duplicate(), test.expected_duplicate; exp != dup {
 					t.Errorf("Wanted duplicate %s got %s", string(exp), string(dup))
 				}
+				if c, exp := string(r.Contents()), test.input; c != exp {
+					t.Errorf("Wanted Contents() %s got %s", exp, c)
+				}
 			})
 		}
 	})
 }
+
+type RucksackIntersectTest struct {
+	start, end int
+	exp        []rune
+}
+
 func TestRucksackList(t *testing.T) {
 	input := `vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -103,4 +112,62 @@ CrZsJsPPZsGzwwsLwLmpwMDw`
 	if s, exp := rl.Priorities().Sum(), 157; s != exp {
 		t.Errorf("Expected sum %d got %d", exp, s)
 	}
+	t.Run("RucksackIntersect", func(t *testing.T) {
+		for _, test := range []RucksackIntersectTest{
+			RucksackIntersectTest{0, 3, []rune{'r'}},
+			RucksackIntersectTest{3, 6, []rune{'Z'}},
+		} {
+			t.Run(
+				fmt.Sprintf("%s %s",
+					func() (s string) {
+						for _, i := range rl[test.start:test.end] {
+							if s != "" {
+								s += ","
+							}
+							s += string(i.Contents())
+						}
+						return
+					}(),
+					string(test.exp),
+				),
+				func(t *testing.T) {
+					res, exp := RucksackIntersect(rl[test.start:test.end]...), test.exp
+					if !reflect.DeepEqual(res, exp) {
+						t.Errorf("Expected %s got %s", string(exp), string(res))
+					}
+				},
+			)
+		}
+	})
+	t.Run("GroupRucksacks", func(t *testing.T) {
+		groups := GroupRucksacks(rl[0:5], 3)
+		if l, exp := len(groups), 2; l != exp {
+			t.Errorf("Expected 2, got %d", l)
+		}
+		if res, exp := groups[0], rl[0:3]; !reflect.DeepEqual([]*Rucksack(exp), res) {
+			t.Errorf("Expected %#v, got %#v", exp, res)
+		}
+		if res, exp := groups[1], rl[3:5]; !reflect.DeepEqual([]*Rucksack(exp), res) {
+			t.Errorf("Expected %#v, got %#v", exp, res)
+		}
+	})
+}
+
+type IntersectTest struct {
+	s1, s2 []rune
+	exp    []rune
+}
+
+func TestIntersect(t *testing.T) {
+	for _, test := range []IntersectTest{
+		IntersectTest{[]rune("abc"), []rune("cdef"), []rune("c")},
+		IntersectTest{[]rune("rk4X"), []rune("Jm5dccXej4"), []rune("4X")},
+	} {
+		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
+			if res, exp := Intersect(test.s1, test.s2), test.exp; !reflect.DeepEqual(res, exp) {
+				t.Errorf("Expected %v got %v", exp, res)
+			}
+		})
+	}
+
 }

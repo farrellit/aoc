@@ -43,6 +43,7 @@ func main() {
 		Days: []AOCDef{
 			AOCDef{Day1{}, "day1.input1"},
 			AOCDef{Day2{}, "day2.input1"},
+			AOCDef{Day3{}, "day3.input1"},
 		},
 	}
 	aoc.Run()
